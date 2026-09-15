@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer scraper guida TV (ogni ora)
+
+[Timer]
+OnCalendar=*-*-* *:10:00
+RandomizedDelaySec=240
+Persistent=true
+Unit=tv-scraper.service
+
+[Install]
+WantedBy=timers.target

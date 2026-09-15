@@ -1,0 +1,9 @@
+[Unit]
+Description=Speedtest orario con Ookla CLI
+
+[Service]
+Type=oneshot
+User=__USER__
+ExecStart=/usr/bin/python3 /home/__USER__/tvkiosk/scraper/speedtest_runner.py --out /home/__USER__/tvkiosk/web/data
+# la misura usa la rete: evitiamo che gareggi con lo scraper
+IOSchedulingClass=idle

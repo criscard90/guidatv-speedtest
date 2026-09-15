@@ -1,0 +1,7 @@
+[Unit]
+Description=Scraper guida TV staseraintv.com (prima serata)
+
+[Service]
+Type=oneshot
+User=__USER__
+ExecStart=/usr/bin/python3 /home/__USER__/tvkiosk/scraper/stasera_scraper.py --out /home/__USER__/tvkiosk/web

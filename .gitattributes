@@ -1,0 +1,8 @@
+# Normalizza i fine riga a LF (necessario per gli script Linux sul Pi)
+* text=auto eol=lf
+
+# Binari
+*.jpg binary
+*.png binary
+*.gif binary
+*.ico binary

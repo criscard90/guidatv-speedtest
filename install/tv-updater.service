@@ -1,0 +1,7 @@
+[Unit]
+Description=Aggiornamento automatico del kiosk da GitHub (git pull)
+
+[Service]
+Type=oneshot
+User=__USER__
+ExecStart=/usr/bin/git -C /home/__USER__/tvkiosk pull --ff-only --quiet

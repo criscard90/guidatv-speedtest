@@ -1,0 +1,7 @@
+# file generati a runtime dal Pi (non committare)
+web/data/
+web/img/
+
+# Python
+__pycache__/
+*.pyc

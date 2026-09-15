@@ -1,0 +1,12 @@
+[Unit]
+Description=TV Kiosk - web server locale
+After=network.target
+
+[Service]
+User=__USER__
+ExecStart=/usr/bin/python3 -m http.server 8080 --directory /home/__USER__/tvkiosk/web
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

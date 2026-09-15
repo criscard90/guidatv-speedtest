@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=No screen blanking
+Comment=Disattiva lo spegnimento dello schermo (sessione X11)
+Exec=/bin/sh -c "xset s off -dpms; xset s noblank"
+X-GNOME-Autostart-enabled=true

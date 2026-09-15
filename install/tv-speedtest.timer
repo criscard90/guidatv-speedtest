@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer speedtest (ogni ora)
+
+[Timer]
+OnCalendar=*-*-* *:40:00
+RandomizedDelaySec=300
+Persistent=true
+Unit=tv-speedtest.service
+
+[Install]
+WantedBy=timers.target

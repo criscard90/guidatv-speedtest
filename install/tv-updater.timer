@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer aggiornamento automatico (ogni 5 minuti)
+
+[Timer]
+OnCalendar=*:0/5
+RandomizedDelaySec=30
+Unit=tv-updater.service
+
+[Install]
+WantedBy=timers.target
