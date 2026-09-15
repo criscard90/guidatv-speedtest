@@ -187,7 +187,49 @@ Copia di nuovo la cartella (scp o chiavetta) e rilancia `./install/install.sh`: 
 - Per lo speedtest più preciso usa il Pi **via cavo Ethernet**; in Wi-Fi la misura riflette comunque la qualità del Wi-Fi.
 - Lo schermo non va in standby grazie a `no-blanking.desktop`; se il tuo sistema lo spegne comunque: `raspi-config → Display Options → Screen Blanking → Disable`.
 
+## 🛠️ Risoluzione problemi
+
+### Errori "ext4 fs error" all'avvio (filesystem corrotto)
+
+Indica microSD corrotta. Procedura di riparazione **dal Pi**:
+
+```bash
+# 1. forza un controllo e riparazione del filesystem al prossimo avvio
+sudo sed -i 's/$/ fsck.mode=force fsck.repair=yes/' /boot/firmware/cmdline.txt
+sudo reboot    # guarda lo schermo: fsck mostrerà le riparazioni
+
+# 2. dopo il riavvio,togli il flag per non fsckare ogni volta
+sudo sed -i 's/ fsck.mode=force fsck.repair=yes//' /boot/firmware/cmdline.txt
+
+# 3. verifica che non tornino errori
+sudo dmesg | grep -iE "ext4|I/O error|corrupt" | tail -20
+```
+
+**Se gli errori tornano** la scheda sta morendo: riflasha Raspberry Pi OS con Imager e riclona il progetto.
+
+**Cause frequenti da eliminare**:
+- **Alimentatore insufficiente**: il Pi 3B+ serve 2.5A reali. Verifica con `vcgencmd get_throttled` → `0x0` = ok; qualsiasi altro valore = tensione scarsa (usa l'alimentatore ufficiale, non un caricatore da telefono vecchio)
+- **microSD di bassa qualità/clonata** (usa SanDisk/Samsung da 16-32 GB classe A1)
+- **Spegnimento staccando la corrente**: usa sempre `sudo shutdown -h now` prima
+
+### Chromium non parte
+
+```bash
+# avvialo da terminale per leggere l'errore
+chromium-browser --incognito http://localhost:8080
+
+# se è corrotto (spesso a causa del filesystem):
+sudo apt install --reinstall -y chromium-browser
+```
+
+Il kiosk usa `--incognito`, quindi un profilo utente corrotto non blocca l'avvio.
+
+### Il kiosk non parte al boot ma a mano sì
+
+Verifica che ci sia l'autostart: `ls ~/.config/autostart/tvkiosk.desktop`. Se manca, rilancia `./install/install.sh` (fa solo il punto 6, è idempotente).
+
 ## Struttura del progetto
+
 
 ```
 guidatv+speedtest/
