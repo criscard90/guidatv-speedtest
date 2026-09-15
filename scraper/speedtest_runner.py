@@ -3,9 +3,9 @@
 Speedtest della rete di casa usando il CLI ufficiale Ookla (più veritiero
 di speedtest-cli) con fallback a speedtest-cli se presente.
 
-Installa Ookla Speedtest CLI sul Raspberry Pi:
-  wget -O /tmp/speedtest.deb https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-armhf.deb
-  sudo apt install -y /tmp/speedtest.deb
+Installa Ookla Speedtest CLI sul Raspberry Pi (metodo ufficiale via packagecloud):
+  curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+  sudo apt-get install -y speedtest
 
 Output:
   <out>/speedtest.json          -> ultimo risultato

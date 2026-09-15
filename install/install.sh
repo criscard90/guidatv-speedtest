@@ -12,22 +12,24 @@ if [ "$EUID" -eq 0 ]; then
   echo "Errore: esegui lo script come utente normale (usa sudo solo quando richiesto)."; exit 1
 fi
 
-echo "==> [1/6] Aggiorno il sistema e installo Chromium"
+echo "==> [1/6] Aggiorno il sistema e installo Chromium + curl"
 sudo apt-get update -q
-sudo apt-get install -y chromium-browser || sudo apt-get install -y chromium
+sudo apt-get install -y chromium-browser curl || sudo apt-get install -y chromium curl
 CHROME="$(command -v chromium-browser || command -v chromium)"
 echo "    Chromium: $CHROME"
 
 echo "==> [2/6] Installo Ookla Speedtest CLI"
-ARCH="$(dpkg --print-architecture)"          # armhf su Pi 3B+ (32bit), arm64 su OS 64bit
-if ! command -v speedtest >/dev/null 2>&1; then
-  wget -qO /tmp/ookla-speedtest.deb \
-    "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-${ARCH}.deb" \
-    || wget -qO /tmp/ookla-speedtest.deb \
-    "https://install.speedtest.net/app/cli/ookla-speedtest-1.1.1-linux-${ARCH}.deb"
-  sudo apt-get install -y /tmp/ookla-speedtest.deb
+if command -v speedtest >/dev/null 2>&1; then
+  echo "    Speedtest già presente: $(command -v speedtest)"
+elif curl -fsSL "https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh" | sudo bash \
+     && sudo apt-get install -y speedtest; then
+  echo "    Speedtest installato: $(command -v speedtest)"
+else
+  echo "  !! ATTENZIONE: speedtest (Ookla) non installato, lo script prosegue comunque." >&2
+  echo "     Per installarlo dopo:" >&2
+  echo "       curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash" >&2
+  echo "       sudo apt-get install -y speedtest" >&2
 fi
-echo "    Speedtest: $(command -v speedtest)"
 
 echo "==> [3/6] Installo i file in $INSTALL_DIR"
 if [ -d "$INSTALL_DIR/.git" ]; then
