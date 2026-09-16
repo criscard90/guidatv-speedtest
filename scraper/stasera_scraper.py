@@ -66,8 +66,8 @@ FULL_SCHED_RE = re.compile(r"<h4[^>]*>\s*(\d{1,2}:\d{2}\s*-.*?)</h4>", re.S | re
 # CAMBIA la città con la tua! Le coordinate le trova da solo. Se vuoi la massima
 # precisione inserisci direttamente lat/lon (es. Milano: 45.4642 / 9.1900).
 WEATHER_CITY = "Roma"
-WEATHER_LAT = None          # es. 45.4642
-WEATHER_LON = None          # es. 9.1900
+WEATHER_LAT = 41.90567      # latitudine casa (5 decimali ~ 1 m)
+WEATHER_LON = 12.65841      # longitudine
 
 WMO_CODES = {               # codici WMO -> (descrizione, icona)
                             # icone: simboli standard supportati da ogni font
