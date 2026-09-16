@@ -4,6 +4,7 @@
 
 const SLIDE_SECS = 12;
 const REFRESH_MINUTES = 5;
+const RETRY_SECONDS = 15;   // riprova rapida se il server/dati non rispondono
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => (s || "").replace(/[&<>"]/g, (c) =>
@@ -15,10 +16,12 @@ let history = [];
 let meteo = null;
 let idx = 0;
 let slideShown = false;   // evita che il primo render avvenga prima dei dati
+let loadTimer = null;
 
 const NO_CACHE = { cache: "no-store" };
 
 async function loadAll() {
+  let ok = false;
   try {
     const [p, s, h, m] = await Promise.all([
       fetch("data/programmi.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
@@ -27,6 +30,7 @@ async function loadAll() {
       fetch("data/meteo.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
     ]);
     if (p && p.programs && p.programs.length) {
+      ok = true;
       programs = p.programs;
       $("updated").textContent = "guida aggiornata: " + p.generated_at.replace("T", " ");
       if (idx >= programs.length) idx = 0;
@@ -43,6 +47,9 @@ async function loadAll() {
   } catch (e) {
     console.warn("load error:", e);
   }
+  // se i dati non sono arrivati (server non pronto) riprova subito
+  clearTimeout(loadTimer);
+  loadTimer = setTimeout(loadAll, ok ? REFRESH_MINUTES * 60 * 1000 : RETRY_SECONDS * 1000);
 }
 
 /* ---------- carosello ---------- */
@@ -219,7 +226,6 @@ setInterval(() => location.reload(), 5 * 60 * 1000);
 /* ---------- avvio ---------- */
 tickClock();
 setInterval(tickClock, 1000);
-loadAll();
-setInterval(loadAll, REFRESH_MINUTES * 60 * 1000);
+loadAll();                  // richiama se stessa: 5 min, oppure 15 s se fallisce
 setInterval(nextSlide, SLIDE_SECS * 1000);
 window.addEventListener("load", renderSlide);

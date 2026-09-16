@@ -113,7 +113,7 @@ WEATHER_LAT = None        # opzionale: precisione massima, es. 45.4642
 WEATHER_LON = None        # opzionale: es. 9.1900
 ```
 
-Le icone meteo usano gli emoji: il font `fonts-noto-color-emoji` è installato automaticamente da `install.sh` (se mancano, `sudo apt install fonts-noto-color-emoji`).
+Le icone meteo usano **simboli standard** (☀ ☁ ☂ ❄ ⚡) presenti in qualsiasi font di sistema: non serve installare font aggiuntivi.
 
 **Frequenza misure** — nei file `install/tv-*.timer` (attualmente: scraper alle `:10`, speedtest alle `:40` di ogni ora, per non farli sovrapporre).
 
@@ -171,12 +171,13 @@ cd ~/tvkiosk
 | Cosa | Frequenza | Meccanismo |
 |---|---|---|
 | Modifiche al codice/dashboard (push su GitHub) | **entro 5 minuti** | `tv-updater.timer` → `git pull` su `~/tvkiosk` |
-| Applicazione a schermo | entro 30 min (o subito) | il kiosk ricarica la pagina da solo ogni 30 min; per l'istantaneo: `sudo systemctl restart tvserver` o aggiorna il browser |
+| Applicazione a schermo | **entro 5 min** (o subito) | il kiosk ricarica la pagina da solo ogni 5 min; per l'istantaneo: `sudo systemctl restart tvserver` |
+| Modifiche al launcher / flag del browser | **entro 5 min** | `tv-update.sh` riallinea l'autostart e riavvia il kiosk da solo |
 | Guida TV (dati) | ogni ora | `tv-scraper.timer` |
 | Speedtest | ogni ora | `tv-speedtest.timer` |
 | Ricarica dati nel browser | ogni 5 min | `app.js` ri-legge i JSON |
 
-**Flusso tipico**: modifichi `web/style.css` o la whitelist dello scraper sul PC → `git add -A && git commit -m "..." && git push` → il Pi fa pull entro 5 minuti → entro 30 minuti la modifica è a schermo. Per vederla subito:
+**Flusso tipico**: modifichi `web/style.css` o la whitelist dello scraper sul PC → `git add -A && git commit -m "..." && git push` → il Pi fa pull entro 5 minuti → entro 5-10 minuti la modifica è a schermo. Per vederla subito:
 
 ```bash
 ssh pi@tvkiosk 'sudo systemctl restart tvserver'
@@ -222,6 +223,17 @@ sudo dmesg | grep -iE "ext4|I/O error|corrupt" | tail -20
 - **microSD di bassa qualità/clonata** (usa SanDisk/Samsung da 16-32 GB classe A1)
 - **Spegnimento staccando la corrente**: usa sempre `sudo shutdown -h now` prima
 
+### Il popup "tradurre la pagina?" (Google Translate)
+
+Il progetto lo disattiva in due modi:
+
+1. **policy di sistema** `/etc/chromium/policies/managed/kiosk.json` con `"TranslateEnabled": false`
+   — è la via affidabile, i soli flag non bastano su tutte le versioni di Chromium
+2. flag nel launcher `install/kiosk.sh`: `--lang=it --disable-translate --disable-features=Translate,TranslateUI,TranslateRanker`
+
+Se il popup appare ancora, la policy non è installata: rilanciare `./install/install.sh`
+(la copia) e poi `sudo reboot`.
+
 ### Il popup "sbloccare il portachiavi" a ogni riavvio
 
 Con l'autologin il portachiavi GNOME non si sblocca da solo. Chromium del kiosk
@@ -235,6 +247,24 @@ sudo reboot
 
 (al prossimo avvio ne viene ricreato uno senza password — dovrai riscrivere
 l'eventuale password Wi-Fi, una volta sola)
+
+### Schermo nero dopo il riavvio (serve premere F5)
+
+Accadeva quando Chromium si avviava **prima** che il web server locale fosse
+pronto: caricava la pagina di errore e non si riprendeva da solo.
+Ora il kiosk parte da `install/kiosk.sh`, che:
+
+- **aspetta** che `http://localhost:8080/` risponda prima di aprire il browser (max 3 minuti)
+- controlla lo stato ogni 20 secondi: se Chromium si è chiuso o se il server era
+  caduto, lo riapre da solo (nessun intervento manuale, nessun F5)
+
+Per riavviare il kiosk a mano:
+
+```bash
+sudo systemctl restart tvserver           # se il server non risponde
+~/tvkiosk/install/kiosk.sh &              # dal desktop del Pi
+DISPLAY=:0 ~/tvkiosk/install/kiosk.sh &   # via SSH
+```
 
 ### Chromium non parte
 

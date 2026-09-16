@@ -16,7 +16,7 @@ echo "==> [1/6] Aggiorno il sistema e installo Chromium + curl"
 sudo apt-get update -q
 sudo apt-get install -y chromium-browser curl fonts-noto-color-emoji \
   || sudo apt-get install -y chromium curl fonts-noto-color-emoji
-CHROME="$(command -v chromium-browser || command -v chromium)"
+CHROME="$(command -v chromium-browser || command -v chromium || echo chromium)"
 echo "    Chromium: $CHROME"
 
 echo "==> [2/6] Installo Ookla Speedtest CLI"
@@ -43,7 +43,10 @@ else
   # installazione da cartella locale (senza GitHub)
   mkdir -p "$INSTALL_DIR"
   cp -r "$REPO_DIR/scraper" "$REPO_DIR/web" "$INSTALL_DIR/"
+  mkdir -p "$INSTALL_DIR/install"
+  cp -rf "$REPO_DIR/install/." "$INSTALL_DIR/install/"
 fi
+chmod +x "$INSTALL_DIR/install/kiosk.sh" "$INSTALL_DIR/install/tv-update.sh" 2>/dev/null || true
 mkdir -p "$INSTALL_DIR/web/img" "$INSTALL_DIR/web/data"
 
 echo "==> [4/6] Prima esecuzione (test)"
@@ -73,16 +76,25 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   echo "    Auto-aggiornamento GitHub attivo (git pull ogni 5 minuti)"
 fi
 
-echo "==> [6/6] Autostart del kiosk al boot"
+echo "==> [6/6] Autostart del kiosk al boot + policy Chromium"
 mkdir -p "$HOME/.config/autostart"
-sed "s|__CHROME__|${CHROME}|g" "$REPO_DIR/install/tvkiosk.desktop" \
+sed "s|__KIOSK__|${INSTALL_DIR}/install/kiosk.sh|g" "$REPO_DIR/install/tvkiosk.desktop" \
   > "$HOME/.config/autostart/tvkiosk.desktop"
 cp "$REPO_DIR/install/no-blanking.desktop" "$HOME/.config/autostart/"
+
+# policy di sistema: niente bolla "tradurre la pagina?", portachiavi, ecc.
+for d in /etc/chromium/policies/managed /etc/chromium-browser/policies/managed; do
+  sudo mkdir -p "$d"
+  sudo cp "$REPO_DIR/install/chromium-kiosk-policy.json" "$d/kiosk.json"
+done
+echo "    Policy Chromium installata (translate/popup disattivati)"
 
 cat <<EOF
 
 Installazione completata!
 - Riavvia il Pi per vedere il kiosk:   sudo reboot
+- Il kiosk usa il launcher: $INSTALL_DIR/install/kiosk.sh
+  (aspetta il web server e rilancia Chromium se si chiude)
 - Log scraper:    journalctl -u tv-scraper.service -f
 - Log speedtest:  journalctl -u tv-speedtest.service -f
 - Disattiva tutto: sudo systemctl disable --now tv-scraper.timer tv-speedtest.timer
@@ -91,4 +103,7 @@ NOTA schermo: se lo schermo si spegne, in raspi-config ->
   Display Options -> Screen Blanking -> Disable
 NOTA rotazione: usa Screen Configuration (menu Preferences) o
   'wlr-randr --output HDMI-A-1 --transform 90' su Wayland.
+NOTA kiosk: se Chromium non appare, avvialo a mano con
+  $INSTALL_DIR/install/kiosk.sh
+    (o solo: kiosk, via SSH con DISPLAY=:0)
 EOF

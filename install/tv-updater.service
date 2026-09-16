@@ -4,4 +4,7 @@ Description=Aggiornamento automatico del kiosk da GitHub (git pull + rigenerazio
 [Service]
 Type=oneshot
 User=__USER__
+# il riavvio del kiosk (se il launcher cambia) deve sopravvivere alla fine del job
+KillMode=process
+TimeoutStartSec=600
 ExecStart=/home/__USER__/tvkiosk/install/tv-update.sh
