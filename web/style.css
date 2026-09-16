@@ -30,12 +30,17 @@ html, body {
 /* ---------- stage / slide ---------- */
 #stage {
   flex: 1;
-  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
   padding: 10px;
   min-height: 0;
+}
+#slide-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  min-width: 0;
 }
 #slide {
   display: flex;
@@ -166,12 +171,13 @@ html, body {
 }
 .w-head { display: flex; align-items: center; justify-content: space-between; }
 .w-label { font-size: 13px; font-weight: 700; color: #ffd75e; text-transform: uppercase; }
-.w-icon { font-size: 26px; line-height: 1; }
+.w-icon { font-size: 26px; line-height: 1; color: #ffd75e; }
 .w-desc { font-size: 12px; color: #99a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .w-temps { display: flex; align-items: baseline; gap: 8px; }
 .w-tmax { font-size: 24px; font-weight: 800; color: #fff; }
 .w-tmin { font-size: 14px; color: #889; }
 .w-row { font-size: 11px; color: #778; white-space: nowrap; }
+.w-row b { color: #99a; font-weight: 600; }
 
 #dots {
   position: absolute;

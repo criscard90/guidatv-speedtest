@@ -14,6 +14,7 @@ let speed = null;
 let history = [];
 let meteo = null;
 let idx = 0;
+let slideShown = false;   // evita che il primo render avvenga prima dei dati
 
 const NO_CACHE = { cache: "no-store" };
 
@@ -29,6 +30,10 @@ async function loadAll() {
       programs = p.programs;
       $("updated").textContent = "guida aggiornata: " + p.generated_at.replace("T", " ");
       if (idx >= programs.length) idx = 0;
+      if (!slideShown) {          // prima visualizzazione: parte da programs[0] (Rai 1)
+        slideShown = true;
+        renderSlide();
+      }
     }
     if (s) { speed = s; renderSpeed(); }
     history = Array.isArray(h) ? h : [];
@@ -193,7 +198,7 @@ function renderWeather() {
     c.querySelector(".w-desc").textContent = d.desc;
     c.querySelector(".w-tmax").textContent = d.t_max + "°";
     c.querySelector(".w-tmin").textContent = d.t_min + "°";
-    c.querySelector(".w-rainp").textContent = "pioggia " + d.rain_prob + "%";
+    c.querySelector(".w-rainp").textContent = d.rain_prob + "%";
     c.querySelector(".w-rainmm").textContent = (d.rain_mm || 0) + " mm";
     c.querySelector(".w-wind").textContent = d.wind_kmh + " km/h";
   });

@@ -70,16 +70,17 @@ WEATHER_LAT = None          # es. 45.4642
 WEATHER_LON = None          # es. 9.1900
 
 WMO_CODES = {               # codici WMO -> (descrizione, icona)
-    0: ("Sereno", "☀️"), 1: ("Preval. sereno", "🌤️"), 2: ("Parz. nuvoloso", "⛅"),
-    3: ("Coperto", "☁️"), 45: ("Nebbia", "🌫️"), 48: ("Nebbia brinata", "🌫️"),
-    51: ("Pioviggine", "🌦️"), 53: ("Pioviggine", "🌦️"), 55: ("Pioviggine fitta", "🌦️"),
-    56: ("Pioviggine gelata", "🌧️"), 57: ("Pioviggine gelata", "🌧️"),
-    61: ("Pioggia debole", "🌧️"), 63: ("Pioggia", "🌧️"), 65: ("Pioggia forte", "🌧️"),
-    66: ("Pioggia gelata", "🌧️"), 67: ("Pioggia gelata", "🌧️"),
-    71: ("Neve debole", "❄️"), 73: ("Neve", "❄️"), 75: ("Neve fitta", "❄️"),
-    77: ("Nevischio", "❄️"), 80: ("Rovesci deboli", "🌦️"), 81: ("Rovesci", "🌧️"),
-    82: ("Rovesci forti", "🌧️"), 85: ("Rovesci di neve", "🌨️"), 86: ("Rovesci di neve", "🌨️"),
-    95: ("Temporale", "⛈️"), 96: ("Temporale grandine", "⛈️"), 99: ("Temporale grandine", "⛈️"),
+                            # icone: simboli standard supportati da ogni font
+    0: ("Sereno", "☀"), 1: ("Preval. sereno", "☀"), 2: ("Parz. nuvoloso", "☁"),
+    3: ("Coperto", "☁"), 45: ("Nebbia", "☁"), 48: ("Nebbia brinata", "☁"),
+    51: ("Pioviggine", "☂"), 53: ("Pioviggine", "☂"), 55: ("Pioviggine fitta", "☂"),
+    56: ("Pioviggine gelata", "☂"), 57: ("Pioviggine gelata", "☂"),
+    61: ("Pioggia debole", "☂"), 63: ("Pioggia", "☂"), 65: ("Pioggia forte", "☂"),
+    66: ("Pioggia gelata", "☂"), 67: ("Pioggia gelata", "☂"),
+    71: ("Neve debole", "❄"), 73: ("Neve", "❄"), 75: ("Neve fitta", "❄"),
+    77: ("Nevischio", "❄"), 80: ("Rovesci deboli", "☂"), 81: ("Rovesci", "☂"),
+    82: ("Rovesci forti", "☂"), 85: ("Rovesci di neve", "❄"), 86: ("Rovesci di neve", "❄"),
+    95: ("Temporale", "⚡"), 96: ("Temporale grandine", "⚡"), 99: ("Temporale grandine", "⚡"),
 }
 
 TIMEOUT_SECS = 20
