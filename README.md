@@ -250,7 +250,35 @@ l'eventuale password Wi-Fi, una volta sola)
 
 ### Schermo nero dopo il riavvio (serve premere F5)
 
-Accadeva quando Chromium si avviava **prima** che il web server locale fosse
+Se lo schermo resta nero, la prima cosa da fare è lanciare la diagnostica: raccoglie
+in un unico output tutto quello che serve (sessione grafica, autostart, processo del
+launcher, log di Chromium, stato del web server e dei dati).
+
+```bash
+bash ~/tvkiosk/install/diagnose.sh
+```
+
+Poi, per capire quale dei due anelli è rotto:
+
+```bash
+# il web server risponde?
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/     # atteso 200
+systemctl status tvserver --no-pager | head -3
+
+# il browser è vivo?
+pgrep -a -f 'chromium.*localhost:8080' | head -3
+tail -n 10 ~/kiosk.log                      # cosa ha fatto il launcher
+tail -n 10 ~/kiosk-chrome.log               # errori di Chromium
+```
+
+I due casi tipici:
+
+| Situazione | Causa | Rimedio |
+|---|---|---|
+| `curl` dà `200`, browser assente | Chromium non parte nella sessione grafica | `pgrep -a -f 'Xorg\|wayfire\|labwc'` per vedere la sessione, oppure avvia a mano `DISPLAY=:0 ~/tvkiosk/install/kiosk.sh &` |
+| `curl` dà `000`/rifiuta | web server fermo, o dati mancanti | `sudo systemctl restart tvserver`, poi `systemctl start tv-scraper.service` |
+
+Accadeva anche quando Chromium si avviava **prima** che il web server locale fosse
 pronto: caricava la pagina di errore e non si riprendeva da solo.
 Ora il kiosk parte da `install/kiosk.sh`, che:
 
@@ -299,6 +327,7 @@ guidatv+speedtest/
 ├── install/
 │   ├── install.sh              # setup automatico sul Pi
 │   ├── kiosk.sh                # launcher kiosk (aspetta il server + watchdog)
+│   ├── diagnose.sh             # diagnostica completa (schermo nero, browser, dati)
 │   ├── chromium-kiosk-policy.json  # policy Chromium (no popup translate)
 │   ├── tvserver.service        # web server locale :8080
 │   ├── tv-scraper.service/.timer
