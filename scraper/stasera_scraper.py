@@ -20,6 +20,7 @@ import ssl
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -60,6 +61,26 @@ CHANNEL_ORDER = [
 
 # palinsesto completo della giornata nelle pagine dei singoli canali
 FULL_SCHED_RE = re.compile(r"<h4[^>]*>\s*(\d{1,2}:\d{2}\s*-.*?)</h4>", re.S | re.I)
+
+# ---------------- METEO (Open-Meteo, gratuito, senza chiave API) ----------------
+# CAMBIA la città con la tua! Le coordinate le trova da solo. Se vuoi la massima
+# precisione inserisci direttamente lat/lon (es. Milano: 45.4642 / 9.1900).
+WEATHER_CITY = "Roma"
+WEATHER_LAT = None          # es. 45.4642
+WEATHER_LON = None          # es. 9.1900
+
+WMO_CODES = {               # codici WMO -> (descrizione, icona)
+    0: ("Sereno", "☀️"), 1: ("Preval. sereno", "🌤️"), 2: ("Parz. nuvoloso", "⛅"),
+    3: ("Coperto", "☁️"), 45: ("Nebbia", "🌫️"), 48: ("Nebbia brinata", "🌫️"),
+    51: ("Pioviggine", "🌦️"), 53: ("Pioviggine", "🌦️"), 55: ("Pioviggine fitta", "🌦️"),
+    56: ("Pioviggine gelata", "🌧️"), 57: ("Pioviggine gelata", "🌧️"),
+    61: ("Pioggia debole", "🌧️"), 63: ("Pioggia", "🌧️"), 65: ("Pioggia forte", "🌧️"),
+    66: ("Pioggia gelata", "🌧️"), 67: ("Pioggia gelata", "🌧️"),
+    71: ("Neve debole", "❄️"), 73: ("Neve", "❄️"), 75: ("Neve fitta", "❄️"),
+    77: ("Nevischio", "❄️"), 80: ("Rovesci deboli", "🌦️"), 81: ("Rovesci", "🌧️"),
+    82: ("Rovesci forti", "🌧️"), 85: ("Rovesci di neve", "🌨️"), 86: ("Rovesci di neve", "🌨️"),
+    95: ("Temporale", "⛈️"), 96: ("Temporale grandine", "⛈️"), 99: ("Temporale grandine", "⛈️"),
+}
 
 TIMEOUT_SECS = 20
 
@@ -217,6 +238,54 @@ def channel_priority(name: str) -> int:
     return len(keys)
 
 
+def geolocate(city: str):
+    """Coordinate di una città tramite il geocoding di Open-Meteo."""
+    url = ("https://geocoding-api.open-meteo.com/v1/search?name="
+           + urllib.parse.quote(city) + "&count=1&language=it&format=json")
+    data = json.loads(fetch(url).decode("utf-8", errors="replace"))
+    results = data.get("results") or []
+    if not results:
+        return None
+    r = results[0]
+    return {"lat": r["latitude"], "lon": r["longitude"], "name": r.get("name", city)}
+
+
+def fetch_weather():
+    """Previsioni oggi + domani da Open-Meteo (senza chiave API)."""
+    lat, lon, name = WEATHER_LAT, WEATHER_LON, WEATHER_CITY
+    if lat is None or lon is None:
+        loc = geolocate(WEATHER_CITY)
+        if not loc:
+            return None
+        lat, lon, name = loc["lat"], loc["lon"], loc["name"]
+
+    url = (f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+           "&daily=weather_code,temperature_2m_max,temperature_2m_min,"
+           "precipitation_probability_max,precipitation_sum,wind_speed_10m_max"
+           "&timezone=Europe%2FBerlin&forecast_days=3")
+    data = json.loads(fetch(url).decode("utf-8", errors="replace"))
+    d = data["daily"]
+    labels = ["Oggi", "Domani"]
+    days = []
+    for i in range(min(2, len(d["time"]))):
+        desc, icon = WMO_CODES.get(int(d["weather_code"][i]), ("—", "🌡️"))
+        days.append({
+            "date": d["time"][i],
+            "label": labels[i] if i < len(labels) else d["time"][i],
+            "t_max": round(d["temperature_2m_max"][i]),
+            "t_min": round(d["temperature_2m_min"][i]),
+            "rain_prob": d["precipitation_probability_max"][i] or 0,
+            "rain_mm": round(d["precipitation_sum"][i] or 0, 1),
+            "wind_kmh": round(d["wind_speed_10m_max"][i] or 0),
+            "desc": desc, "icon": icon,
+        })
+    return {
+        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "location": name,
+        "days": days,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description="Scraper prima serata staseraintv.com")
     ap.add_argument("--out", default="web", help="cartella web di destinazione (default: ./web)")
@@ -227,6 +296,8 @@ def main():
     ap.add_argument("--no-full-schedule", action="store_true",
                     help="salta il palinsesto completo giornaliero (più veloce, "
                          "ma la barra ORA IN ONDA è precisa solo la sera)")
+    ap.add_argument("--no-meteo", action="store_true",
+                    help="salta il recupero delle previsioni meteo")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -291,6 +362,25 @@ def main():
 
     for p in programs:
         print(f"  {p['time']}  {p['channel']:<20} {p['title']}")
+
+    # meteo oggi + domani (Open-Meteo, gratuito, senza chiave API)
+    if not args.no_meteo:
+        try:
+            meteo = fetch_weather()
+            if meteo:
+                mdest = out / "data" / "meteo.json"
+                mtmp = mdest.with_suffix(".tmp")
+                mtmp.write_text(json.dumps(meteo, ensure_ascii=False, indent=1),
+                                encoding="utf-8")
+                mtmp.replace(mdest)
+                d0 = meteo["days"][0]
+                print(f"Meteo {meteo['location']}: oggi {d0['desc']} {d0['t_max']}°, "
+                      f"pioggia {d0['rain_prob']}% ({d0['rain_mm']} mm), "
+                      f"vento {d0['wind_kmh']} km/h")
+        except (urllib.error.URLError, OSError, ssl.SSLError, json.JSONDecodeError,
+                KeyError, ValueError) as e:
+            print(f"  ! meteo non disponibile: {e}", file=sys.stderr)
+
     print(f"OK -> {dest}")
 
 

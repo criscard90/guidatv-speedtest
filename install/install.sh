@@ -14,7 +14,8 @@ fi
 
 echo "==> [1/6] Aggiorno il sistema e installo Chromium + curl"
 sudo apt-get update -q
-sudo apt-get install -y chromium-browser curl || sudo apt-get install -y chromium curl
+sudo apt-get install -y chromium-browser curl fonts-noto-color-emoji \
+  || sudo apt-get install -y chromium curl fonts-noto-color-emoji
 CHROME="$(command -v chromium-browser || command -v chromium)"
 echo "    Chromium: $CHROME"
 

@@ -12,16 +12,18 @@ const esc = (s) => (s || "").replace(/[&<>"]/g, (c) =>
 let programs = [];
 let speed = null;
 let history = [];
+let meteo = null;
 let idx = 0;
 
 const NO_CACHE = { cache: "no-store" };
 
 async function loadAll() {
   try {
-    const [p, s, h] = await Promise.all([
+    const [p, s, h, m] = await Promise.all([
       fetch("data/programmi.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
       fetch("data/speedtest.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
       fetch("data/speedtest_history.json", NO_CACHE).then((r) => (r.ok ? r.json() : [])),
+      fetch("data/meteo.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
     ]);
     if (p && p.programs && p.programs.length) {
       programs = p.programs;
@@ -31,6 +33,8 @@ async function loadAll() {
     if (s) { speed = s; renderSpeed(); }
     history = Array.isArray(h) ? h : [];
     drawSpark();
+    meteo = m;
+    renderWeather();
   } catch (e) {
     console.warn("load error:", e);
   }
@@ -170,6 +174,29 @@ function drawSpark() {
   ctx.closePath();
   ctx.fillStyle = "rgba(79,209,165,.15)";
   ctx.fill();
+}
+
+/* ---------- meteo (Open-Meteo) ---------- */
+function renderWeather() {
+  const w = $("weather");
+  if (!meteo || !meteo.days || !meteo.days.length) {
+    w.classList.add("hidden");
+    return;
+  }
+  w.classList.remove("hidden");
+  w.querySelector(".weather-title").textContent = "METEO · " + (meteo.location || "");
+  const cards = w.querySelectorAll(".w-card");
+  meteo.days.slice(0, cards.length).forEach((d, i) => {
+    const c = cards[i];
+    c.querySelector(".w-label").textContent = d.label;
+    c.querySelector(".w-icon").textContent = d.icon;
+    c.querySelector(".w-desc").textContent = d.desc;
+    c.querySelector(".w-tmax").textContent = d.t_max + "°";
+    c.querySelector(".w-tmin").textContent = d.t_min + "°";
+    c.querySelector(".w-rainp").textContent = "pioggia " + d.rain_prob + "%";
+    c.querySelector(".w-rainmm").textContent = (d.rain_mm || 0) + " mm";
+    c.querySelector(".w-wind").textContent = d.wind_kmh + " km/h";
+  });
 }
 
 /* ---------- orologio ---------- */

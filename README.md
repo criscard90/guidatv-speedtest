@@ -105,6 +105,16 @@ python3 stasera_scraper.py --all-channels     # tutti i canali, niente whitelist
 **Durata slide** — in `web/app.js`: `const SLIDE_SECS = 12;`
 Con ~50 canali un giro completo dura ~10 minuti: se vuoi un giro più veloce, riduci i canali nella whitelist oppure la durata della slide.
 
+**Meteo (oggi + domani)** — il pannello a destra delle slide usa **Open-Meteo** (gratuito, senza chiave API). Per impostare la tua città modifica in `scraper/stasera_scraper.py`:
+
+```python
+WEATHER_CITY = "Roma"     # <-- la tua città (coordinate automatiche)
+WEATHER_LAT = None        # opzionale: precisione massima, es. 45.4642
+WEATHER_LON = None        # opzionale: es. 9.1900
+```
+
+Le icone meteo usano gli emoji: il font `fonts-noto-color-emoji` è installato automaticamente da `install.sh` (se mancano, `sudo apt install fonts-noto-color-emoji`).
+
 **Frequenza misure** — nei file `install/tv-*.timer` (attualmente: scraper alle `:10`, speedtest alle `:40` di ogni ora, per non farli sovrapporre).
 
 **Rotazione dello schermo** — se lo schermo è verticale: `raspi-config → Display Options →` oppure dal desktop `Screen Configuration`.
