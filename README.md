@@ -298,10 +298,14 @@ guidatv+speedtest/
 │   └── img/                    # anteprime (generati, con cache)
 ├── install/
 │   ├── install.sh              # setup automatico sul Pi
+│   ├── kiosk.sh                # launcher kiosk (aspetta il server + watchdog)
+│   ├── chromium-kiosk-policy.json  # policy Chromium (no popup translate)
 │   ├── tvserver.service        # web server locale :8080
 │   ├── tv-scraper.service/.timer
 │   ├── tv-speedtest.service/.timer
-│   ├── tvkiosk.desktop         # chromium kiosk all'avvio
+│   ├── tv-update.sh            # git pull + rigenera dati + riavvia kiosk
+│   ├── tv-updater.service/.timer
+│   ├── tvkiosk.desktop         # autostart del launcher kiosk
 │   └── no-blanking.desktop
 └── README.md
 ```
