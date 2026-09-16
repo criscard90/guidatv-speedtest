@@ -212,9 +212,9 @@ function tickClock() {
     { weekday: "long", day: "numeric", month: "long" });
 }
 
-/* ricarica la pagina ogni 30 minuti per applicare gli aggiornamenti
-   inviati da GitHub (git pull del tv-updater) senza riavviare il Pi */
-setInterval(() => location.reload(), 30 * 60 * 1000);
+/* ricarica la pagina ogni 5 minuti per applicare gli aggiornamenti
+   inviati da GitHub (il tv-updater fa pull + rigenera i dati) */
+setInterval(() => location.reload(), 5 * 60 * 1000);
 
 /* ---------- avvio ---------- */
 tickClock();
