@@ -18,6 +18,7 @@ import json
 import re
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -43,6 +44,22 @@ CHANNELS_WHITELIST = [
     "HGTV", "Travel TV", "Donna TV", "iL 61", "Italia 7 Gold",
     "SportItalia", "Telereporter", "Alma TV",
 ]
+
+# Ordine del carosello: i canali principali prima, gli altri in fondo.
+CHANNEL_ORDER = [
+    "Rai 1", "Rai 2", "Rai 3", "Rai 4", "Canale 5", "Italia 1",
+    "Rete 4", "La7", "TV8", "NOVE", "Canale 20", "Cielo",
+    "Rai 5", "Rai Movie", "Rai Premium", "Iris", "Cine 34", "La 5",
+    "Italia 2", "Top Crime", "Giallo", "La7 Cinema", "Twentyseven",
+    "DMAX", "RealTime", "Discovery", "Focus TV", "HGTV", "Food Network",
+    "TV2000", "Boing", "Cartoonito", "K2", "Frisbee", "DeaKids", "Super!",
+    "Rai Gulp", "Rai YoYo", "Rai Storia", "Rai Scuola", "Rai Sport",
+    "Mediaset Extra", "Travel TV", "Donna TV", "iL 61",
+    "Italia 7 Gold", "SportItalia", "Telereporter", "Alma TV",
+]
+
+# palinsesto completo della giornata nelle pagine dei singoli canali
+FULL_SCHED_RE = re.compile(r"<h4[^>]*>\s*(\d{1,2}:\d{2}\s*-.*?)</h4>", re.S | re.I)
 
 TIMEOUT_SECS = 20
 
@@ -172,6 +189,34 @@ def download_images(programs, img_dir: Path):
         p["image"] = "img/" + fname
 
 
+def fetch_full_schedule(url: str):
+    """Dal canale dedicato: palinsesto completo della giornata (06:00 -> notte)."""
+    raw = fetch(url).decode("utf-8", errors="replace")
+    m = FULL_SCHED_RE.search(raw)
+    if not m:
+        return None
+    schedule = []
+    for line in m.group(1).split("<br>"):
+        lm = SCHED_LINE_RE.search(clean_text(line))
+        if lm and lm.group(2):
+            schedule.append({"time": lm.group(1), "title": lm.group(2)})
+    return schedule or None
+
+
+def channel_priority(name: str) -> int:
+    """Posizione del canale in CHANNEL_ORDER (prima corrispondenza esatta,
+    poi per sottostringa; i canali fuori lista vanno in fondo)."""
+    key = normalize(name)
+    keys = [normalize(c) for c in CHANNEL_ORDER]
+    for i, c in enumerate(keys):
+        if key == c:
+            return i
+    for i, c in enumerate(keys):
+        if c in key:
+            return i
+    return len(keys)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Scraper prima serata staseraintv.com")
     ap.add_argument("--out", default="web", help="cartella web di destinazione (default: ./web)")
@@ -179,6 +224,9 @@ def main():
                     help="quante pagine della guida scambiare (default: 7, tutte)")
     ap.add_argument("--all-channels", action="store_true",
                     help="includi TUTTI i canali trovati, non solo la whitelist")
+    ap.add_argument("--no-full-schedule", action="store_true",
+                    help="salta il palinsesto completo giornaliero (più veloce, "
+                         "ma la barra ORA IN ONDA è precisa solo la sera)")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -206,7 +254,26 @@ def main():
         print("ERRORE: nessun programma estratto (il sito è cambiato?)", file=sys.stderr)
         sys.exit(2)
 
-    programs.sort(key=lambda p: p["time"])
+    # palinsesto completo della giornata dalle pagine dei singoli canali
+    # (la homepage copre solo la fascia serale; con questo la barra
+    #  "ORA IN ONDA" è corretta a qualunque ora del giorno)
+    if not args.no_full_schedule:
+        print("Scarico i palinsesti completi delle giornate ...")
+        for p in programs:
+            if not p["url"]:
+                continue
+            try:
+                full = fetch_full_schedule(p["url"])
+                if full:
+                    p["schedule"] = full
+            except (urllib.error.URLError, OSError, ssl.SSLError) as e:
+                # in caso di errore resta il palinsesto serale della homepage
+                print(f"  ! palinsesto completo non disponibile per "
+                      f"{p['channel']}: {e}", file=sys.stderr)
+            time.sleep(0.15)   # gentilezza verso il sito
+
+    # ordine del carosello: canali principali prima, poi per orario
+    programs.sort(key=lambda p: (channel_priority(p["channel"]), p["time"]))
     print(f"Trovati {len(programs)} programmi su {ok_pages}/{len(urls)} pagine, "
           f"scarico le anteprime ...")
     download_images(programs, out / "img")
