@@ -54,6 +54,26 @@ html, body {
 }
 #slide.visible { opacity: 1; }
 
+/* messaggio di stato: evita che lo schermo resti completamente nero quando i
+   dati non sono ancora pronti o il web server locale non risponde */
+.status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: pre-line;
+  padding: 5%;
+  font-size: 20px;
+  line-height: 1.5;
+  color: #cbd;
+  background: #0d0f14;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.7);
+}
+.status.hidden { display: none; }
+
 #prog-img {
   width: 26%;
   height: 100%;

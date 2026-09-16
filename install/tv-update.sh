@@ -20,19 +20,23 @@ echo "$(date '+%F %T') aggiornamento $OLD -> $NEW: rigenero i dati"
 python3 "$TVHOME/tvkiosk/scraper/stasera_scraper.py" --out "$TVHOME/tvkiosk/web" \
   || echo "$(date '+%F %T') scraper in errore dopo il pull" >&2
 
-# se sono cambiati launcher/flag del browser, riallinea l'autostart e riavvia il kiosk
-if git diff --name-only "$OLD" "$NEW" | grep -q -E '^install/(tvkiosk\.desktop|kiosk\.sh)$'; then
-  echo "$(date '+%F %T') launcher kiosk aggiornato: riavvio il browser"
+# Se sono cambiati launcher o flag del browser: riallinea l'autostart e chiedi
+# al kiosk di riavviarsi. Il riavvio NON si fa da qui: questo servizio di sistema
+# non gira nella sessione grafica (per systemd HOME e' /root, non /home/<utente>)
+# quindi un Chromium avviato da qui non trova il display e resta lo schermo nero.
+# Si lascia un marcatore: e' il kiosk, che gira nella sessione giusta, a riavviarsi.
+if git diff --name-only "$OLD" "$NEW" | grep -q -E '^install/(tvkiosk\.desktop|kiosk\.sh|no-blanking\.desktop)$'; then
+  echo "$(date '+%F %T') launcher kiosk aggiornato: riallineo l'autostart"
   chmod +x "$TVHOME/tvkiosk/install/kiosk.sh" 2>/dev/null || true
-  mkdir -p "$HOME/.config/autostart"
+  mkdir -p "$TVHOME/.config/autostart"
   sed "s|__KIOSK__|$TVHOME/tvkiosk/install/kiosk.sh|g" \
-    "$TVHOME/tvkiosk/install/tvkiosk.desktop" > "$HOME/.config/autostart/tvkiosk.desktop"
-
-  pkill -f 'chromium.*localhost:8080' >/dev/null 2>&1 || true
-  pkill -f 'tvkiosk/install/kiosk.sh' >/dev/null 2>&1 || true
-  sleep 2
-  # riavvia il launcher aggiornato (il watchdog rilancia anche Chromium)
-  DISPLAY=:0 XAUTHORITY="$HOME/.Xauthority" setsid \
-    "$TVHOME/tvkiosk/install/kiosk.sh" >/dev/null 2>&1 &
-  echo "$(date '+%F %T') kiosk riavviato"
+    "$TVHOME/tvkiosk/install/tvkiosk.desktop" > "$TVHOME/.config/autostart/tvkiosk.desktop"
+  cp "$TVHOME/tvkiosk/install/no-blanking.desktop" "$TVHOME/.config/autostart/" 2>/dev/null || true
+  # policy Chromium (solo se l'utente ha sudo senza password, come sul Pi di default)
+  for d in /etc/chromium/policies/managed /etc/chromium-browser/policies/managed; do
+    sudo -n mkdir -p "$d" 2>/dev/null && sudo -n cp \
+      "$TVHOME/tvkiosk/install/chromium-kiosk-policy.json" "$d/kiosk.json" 2>/dev/null || true
+  done
+  touch "$TVHOME/.kiosk-reload"
+  echo "$(date '+%F %T') chiesto il riavvio del kiosk (marcatore .kiosk-reload)"
 fi

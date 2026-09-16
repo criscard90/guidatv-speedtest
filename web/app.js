@@ -22,6 +22,7 @@ const NO_CACHE = { cache: "no-store" };
 
 async function loadAll() {
   let ok = false;
+  let reached = false;
   try {
     const [p, s, h, m] = await Promise.all([
       fetch("data/programmi.json", NO_CACHE).then((r) => (r.ok ? r.json() : null)),
@@ -44,12 +45,34 @@ async function loadAll() {
     drawSpark();
     meteo = m;
     renderWeather();
+    reached = true;             // il web server ha risposto (almeno una richiesta)
   } catch (e) {
     console.warn("load error:", e);
+  }
+  // messaggio a schermo: mai una pagina completamente nera
+  if (ok) {
+    setStatus("");
+  } else if (reached) {
+    setStatus("In attesa dei dati della guida TV…\n" +
+              "il primo aggiornamento può richiedere qualche minuto");
+  } else {
+    setStatus("Web server locale non raggiungibile…\nriprovo tra pochi secondi");
   }
   // se i dati non sono arrivati (server non pronto) riprova subito
   clearTimeout(loadTimer);
   loadTimer = setTimeout(loadAll, ok ? REFRESH_MINUTES * 60 * 1000 : RETRY_SECONDS * 1000);
+}
+
+/* ---------- messaggio di stato (mai uno schermo nero) ---------- */
+function setStatus(msg) {
+  const el = $("status");
+  if (msg) {
+    el.classList.remove("hidden");
+    el.textContent = msg;
+  } else {
+    el.classList.add("hidden");
+    el.textContent = "";
+  }
 }
 
 /* ---------- carosello ---------- */
