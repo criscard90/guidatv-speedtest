@@ -2,5 +2,5 @@
 Type=Application
 Name=TV Kiosk
 Comment=Dashboard guida TV + speedtest a schermo intero
-Exec=__CHROME__ --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --overscroll-history-navigation=0 --incognito http://localhost:8080/
+Exec=__CHROME__ --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --overscroll-history-navigation=0 --password-store=basic --incognito http://localhost:8080/
 X-GNOME-Autostart-enabled=true

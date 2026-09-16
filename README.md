@@ -222,6 +222,20 @@ sudo dmesg | grep -iE "ext4|I/O error|corrupt" | tail -20
 - **microSD di bassa qualità/clonata** (usa SanDisk/Samsung da 16-32 GB classe A1)
 - **Spegnimento staccando la corrente**: usa sempre `sudo shutdown -h now` prima
 
+### Il popup "sbloccare il portachiavi" a ogni riavvio
+
+Con l'autologin il portachiavi GNOME non si sblocca da solo. Chromium del kiosk
+già usa `--password-store=basic` (non tocca il portachiavi). Se il popup
+comparesse ancora (es. per le password Wi-Fi salvate), azzera il portachiavi:
+
+```bash
+rm -rf ~/.local/share/keyrings
+sudo reboot
+```
+
+(al prossimo avvio ne viene ricreato uno senza password — dovrai riscrivere
+l'eventuale password Wi-Fi, una volta sola)
+
 ### Chromium non parte
 
 ```bash
