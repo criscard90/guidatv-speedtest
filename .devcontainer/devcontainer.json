@@ -1,0 +1,16 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Cline Bridge",
+      "onAutoForward": "silent"
+    }
+  },
+  "postStartCommand": "sh bridge/configure-public-port.sh"
+}
